@@ -47,6 +47,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/injecapstone?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
 
     ports:
       - "127.0.0.1:8080:8080"

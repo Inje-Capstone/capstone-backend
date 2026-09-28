@@ -1,15 +1,19 @@
 package com.injecapstone.capstonebackend.auth.service;
 
+import com.injecapstone.capstonebackend.auth.dto.LoginRequest;
+import com.injecapstone.capstonebackend.auth.dto.LoginResponse;
 import com.injecapstone.capstonebackend.auth.dto.SignUpRequest;
+import com.injecapstone.capstonebackend.global.error.BusinessException;
+import com.injecapstone.capstonebackend.global.error.ErrorCode;
+import com.injecapstone.capstonebackend.global.jwt.JwtTokenProvider;
 import com.injecapstone.capstonebackend.user.domain.User;
 import com.injecapstone.capstonebackend.user.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.injecapstone.capstonebackend.auth.dto.LoginRequest;
-import com.injecapstone.capstonebackend.auth.dto.LoginResponse;
-import com.injecapstone.capstonebackend.global.jwt.JwtTokenProvider;
 
 @Service
 @RequiredArgsConstructor
@@ -20,44 +24,65 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
+    // 회원가입
     @Transactional
     public Long signUp(SignUpRequest request) {
 
+        // 이메일 중복 확인
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new BusinessException(
+                    ErrorCode.DUPLICATE_EMAIL
+            );
         }
 
+        // 닉네임 중복 확인
         if (userRepository.existsByNickname(request.nickname())) {
-            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            throw new BusinessException(
+                    ErrorCode.DUPLICATE_NICKNAME
+            );
         }
 
+        // 비밀번호 암호화
         String encodedPassword =
                 passwordEncoder.encode(request.password());
 
+        // 사용자 생성
         User user = User.create(
                 request.email(),
                 encodedPassword,
                 request.nickname()
         );
 
+        // DB 저장
         User savedUser = userRepository.save(user);
 
         return savedUser.getId();
     }
 
-    @Transactional(readOnly = true)
+    // 로그인
     public LoginResponse login(LoginRequest request) {
 
+        // 이메일로 사용자 조회
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() ->
-                        new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.")
+                        new BusinessException(
+                                ErrorCode.INVALID_CREDENTIALS
+                        )
                 );
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
+        // 비밀번호 검증
+        if (!passwordEncoder.matches(
+                request.password(),
+                user.getPassword()
+        )) {
+            throw new BusinessException(
+                    ErrorCode.INVALID_CREDENTIALS
+            );
         }
 
-        String accessToken = jwtTokenProvider.createAccessToken(user);
+        // JWT 생성
+        String accessToken =
+                jwtTokenProvider.createAccessToken(user);
 
         return new LoginResponse(
                 user.getId(),
