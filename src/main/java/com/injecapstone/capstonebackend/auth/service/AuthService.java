@@ -71,10 +71,12 @@ public class AuthService {
                 );
 
         // 비밀번호 검증
-        if (!passwordEncoder.matches(
-                request.password(),
-                user.getPassword()
-        )) {
+        if (user.getPassword() == null ||
+                !passwordEncoder.matches(
+                        request.password(),
+                        user.getPassword()
+                )) {
+
             throw new BusinessException(
                     ErrorCode.INVALID_CREDENTIALS
             );
