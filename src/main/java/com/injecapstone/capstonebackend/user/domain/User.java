@@ -23,10 +23,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = true, length = 255)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = true, length = 255)
     private String password;
 
     @Column(nullable = false, length = 30)
@@ -62,6 +62,18 @@ public class User {
         return new User(
                 email,
                 password,
+                nickname,
+                UserRole.USER
+        );
+    }
+
+    public static User createSocial(
+            String email,
+            String nickname
+    ) {
+        return new User(
+                email,
+                null,
                 nickname,
                 UserRole.USER
         );
