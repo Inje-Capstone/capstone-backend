@@ -1,5 +1,6 @@
 package com.injecapstone.capstonebackend.global.config;
 
+import com.injecapstone.capstonebackend.auth.social.handler.OAuth2AuthenticationSuccessHandler;
 import com.injecapstone.capstonebackend.global.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
 
 
         @Bean
@@ -49,11 +51,30 @@ public class SecurityConfig {
                         )
                 )
 
-                .authorizeHttpRequests(auth ->
-                        auth
-                                .requestMatchers("/api/auth/**").permitAll()
-                                .requestMatchers("/error").permitAll()
-                                .anyRequest().authenticated()
+                .authorizeHttpRequests(auth -> auth
+                        // 회원가입, 로그인, OAuth 코드 교환
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // Google / Kakao OAuth2 로그인
+                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/login/oauth2/**").permitAll()
+
+                        // Swagger / OpenAPI 문서
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
+                        .requestMatchers("/error").permitAll()
+
+                        // 그 외 API는 JWT 인증 필요
+                        .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 ->
+                        oauth2.successHandler(
+                                oauth2AuthenticationSuccessHandler
+                        )
                 )
 
                 .addFilterBefore(
