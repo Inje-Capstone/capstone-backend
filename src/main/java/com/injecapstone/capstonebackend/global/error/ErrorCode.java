@@ -28,6 +28,25 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST,
             "유효하지 않거나 만료된 로그인 코드입니다."
     ),
+    DIAGNOSIS_NOT_COMPLETED(
+            HttpStatus.BAD_REQUEST,
+            "수준 진단을 먼저 완료해주세요."
+    ),
+
+    SUPPORTED_TEAM_NOT_SELECTED(
+            HttpStatus.BAD_REQUEST,
+            "응원팀 또는 '아직 없어요'를 선택해주세요."
+    ),
+
+    USER_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "사용자를 찾을 수 없습니다."
+    ),
+
+    REQUIRED_TERMS_NOT_AGREED(
+            HttpStatus.BAD_REQUEST,
+            "필수 약관에 먼저 동의해주세요."
+    ),
 
     INVALID_INPUT(
             HttpStatus.BAD_REQUEST,
