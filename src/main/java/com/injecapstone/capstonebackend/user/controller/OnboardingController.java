@@ -13,12 +13,14 @@ import com.injecapstone.capstonebackend.user.dto.DiagnosisQuestionResponse;
 import com.injecapstone.capstonebackend.user.dto.DiagnosisResultResponse;
 import com.injecapstone.capstonebackend.user.dto.DiagnosisSubmitRequest;
 import com.injecapstone.capstonebackend.user.dto.SupportedTeamRequest;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/users/me/onboarding")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class OnboardingController {
 
     private final OnboardingService onboardingService;
