@@ -42,6 +42,68 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    // 서비스 이용약관 동의 시각
+    private LocalDateTime termsAgreedAt;
+
+    // 개인정보 수집·이용 동의 시각
+    private LocalDateTime privacyAgreedAt;
+
+    // 선택 항목: 새 경기 알림 받기
+    private Boolean gameNotificationEnabled = false;
+
+    // 온보딩 완료 시각
+    private LocalDateTime onboardingCompletedAt;
+
+    //유저 수준 진단
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private LearningLevel learningLevel;
+
+    private Integer diagnosisScore;
+
+    private LocalDateTime diagnosisCompletedAt;
+
+    public void saveDiagnosis(
+            LearningLevel learningLevel,
+            int diagnosisScore
+    ) {
+        this.learningLevel = learningLevel;
+        this.diagnosisScore = diagnosisScore;
+        this.diagnosisCompletedAt = LocalDateTime.now();
+    }
+
+    //응원팀 선택
+    // null: 아직 선택하지 않음 / NONE: '아직 없어요' 선택
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private SupportedTeam supportedTeam;
+    // 응원팀 선택값 저장
+    public void selectSupportedTeam(SupportedTeam supportedTeam) {
+        this.supportedTeam = supportedTeam;
+    }
+
+    // 수준 진단 완료 여부
+    public boolean hasCompletedDiagnosis() {
+        return learningLevel != null
+                && diagnosisScore != null
+                && diagnosisCompletedAt != null;
+    }
+
+    // 응원팀 선택 단계 완료 여부
+    // NONE도 사용자가 직접 선택한 값이므로 완료로 처리
+    public boolean hasSelectedSupportedTeam() {
+        return supportedTeam != null;
+    }
+
+    // 온보딩 완료 처리
+    // 재요청해도 최초 완료 시각 유지
+    public void completeOnboarding() {
+        if (this.onboardingCompletedAt == null) {
+            this.onboardingCompletedAt = LocalDateTime.now();
+        }
+    }
+
+    //User 정보
     protected User(
             String email,
             String password,
@@ -79,6 +141,29 @@ public class User {
         );
     }
 
+    public void agreeToTerms(boolean gameNotificationEnabled) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // 다시 요청해도 최초 동의 시각은 유지
+        if (this.termsAgreedAt == null) {
+            this.termsAgreedAt = now;
+        }
+
+        if (this.privacyAgreedAt == null) {
+            this.privacyAgreedAt = now;
+        }
+
+        this.gameNotificationEnabled = gameNotificationEnabled;
+    }
+
+    public boolean hasAgreedToRequiredTerms() {
+        return termsAgreedAt != null && privacyAgreedAt != null;
+    }
+
+    public boolean isOnboardingCompleted() {
+        return onboardingCompletedAt != null;
+    }
+
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
@@ -89,5 +174,6 @@ public class User {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+
     }
 }
