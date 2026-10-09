@@ -103,6 +103,11 @@ public class User {
         }
     }
 
+    // 사용자의 닉네임 변경
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
     //User 정보
     protected User(
             String email,
