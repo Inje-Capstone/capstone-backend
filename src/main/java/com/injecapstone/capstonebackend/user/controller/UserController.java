@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.injecapstone.capstonebackend.user.dto.GameNotificationUpdateRequest;
 
 @RestController
 @RequestMapping("/api/users")
@@ -49,6 +50,23 @@ public class UserController {
     ) {
         return ResponseEntity.ok(
                 userService.updateNickname(userId, request.nickname())
+        );
+    }
+    // 로그인한 사용자의 경기 알림 수신 설정 변경
+    @Operation(
+            summary = "경기 알림 수신 설정 변경",
+            description = "경기 알림 수신 여부를 변경하고 변경된 내 정보를 반환합니다."
+    )
+    @PatchMapping("/me/game-notification")
+    public ResponseEntity<MyProfileResponse> updateGameNotification(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody GameNotificationUpdateRequest request
+    ) {
+        return ResponseEntity.ok(
+                userService.updateGameNotification(
+                        userId,
+                        request.gameNotificationEnabled()
+                )
         );
     }
 }
