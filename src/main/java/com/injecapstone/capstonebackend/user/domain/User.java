@@ -108,6 +108,11 @@ public class User {
         this.nickname = nickname;
     }
 
+    // 경기 알림 수신 여부만 변경
+    public void changeGameNotificationEnabled(boolean gameNotificationEnabled) {
+        this.gameNotificationEnabled = gameNotificationEnabled;
+    }
+
     //User 정보
     protected User(
             String email,

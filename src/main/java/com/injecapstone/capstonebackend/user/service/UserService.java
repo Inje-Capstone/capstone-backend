@@ -85,4 +85,17 @@ public class UserService {
 
         return false;
     }
+
+    // 본인의 경기 알림 수신 설정을 변경하고 변경된 내 정보 반환
+    @Transactional
+    public MyProfileResponse updateGameNotification(
+            Long userId,
+            boolean gameNotificationEnabled
+    ) {
+        User user = findUser(userId);
+
+        user.changeGameNotificationEnabled(gameNotificationEnabled);
+
+        return MyProfileResponse.from(user);
+    }
 }
