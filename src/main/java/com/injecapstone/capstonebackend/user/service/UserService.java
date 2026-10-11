@@ -10,6 +10,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.injecapstone.capstonebackend.user.domain.SupportedTeam;
 
 @Service
 @RequiredArgsConstructor
@@ -95,6 +96,20 @@ public class UserService {
         User user = findUser(userId);
 
         user.changeGameNotificationEnabled(gameNotificationEnabled);
+
+        return MyProfileResponse.from(user);
+    }
+
+    // 본인의 응원팀을 변경하고 변경된 내 정보 반환
+    @Transactional
+    public MyProfileResponse updateSupportedTeam(
+            Long userId,
+            SupportedTeam supportedTeam
+    ) {
+        User user = findUser(userId);
+
+        // NONE도 사용자가 선택한 정상 값으로 저장
+        user.selectSupportedTeam(supportedTeam);
 
         return MyProfileResponse.from(user);
     }

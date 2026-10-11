@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.injecapstone.capstonebackend.user.dto.GameNotificationUpdateRequest;
+import com.injecapstone.capstonebackend.user.dto.SupportedTeamRequest;
 
 @RestController
 @RequestMapping("/api/users")
@@ -66,6 +67,24 @@ public class UserController {
                 userService.updateGameNotification(
                         userId,
                         request.gameNotificationEnabled()
+                )
+        );
+    }
+
+    // 로그인한 사용자의 응원팀 변경
+    @Operation(
+            summary = "내 응원팀 수정",
+            description = "응원팀을 변경하고 변경된 내 정보를 반환합니다. NONE은 응원팀이 없음을 의미합니다."
+    )
+    @PatchMapping("/me/supported-team")
+    public ResponseEntity<MyProfileResponse> updateSupportedTeam(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody SupportedTeamRequest request
+    ) {
+        return ResponseEntity.ok(
+                userService.updateSupportedTeam(
+                        userId,
+                        request.supportedTeam()
                 )
         );
     }
