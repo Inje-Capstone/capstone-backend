@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.injecapstone.capstonebackend.user.dto.GameNotificationUpdateRequest;
 import com.injecapstone.capstonebackend.user.dto.SupportedTeamRequest;
+import com.injecapstone.capstonebackend.user.dto.SupportedTeamResponse;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -86,6 +89,18 @@ public class UserController {
                         userId,
                         request.supportedTeam()
                 )
+        );
+    }
+
+    // 온보딩 및 마이페이지에서 사용할 응원팀 선택 목록 조회
+    @Operation(
+            summary = "응원팀 선택 목록 조회",
+            description = "응원팀 코드와 표시 이름을 반환합니다. NONE(아직 없어요)을 포함합니다."
+    )
+    @GetMapping("/supported-teams")
+    public ResponseEntity<List<SupportedTeamResponse>> getSupportedTeams() {
+        return ResponseEntity.ok(
+                userService.getSupportedTeams()
         );
     }
 }

@@ -11,6 +11,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.injecapstone.capstonebackend.user.domain.SupportedTeam;
+import com.injecapstone.capstonebackend.user.dto.SupportedTeamResponse;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -112,5 +116,12 @@ public class UserService {
         user.selectSupportedTeam(supportedTeam);
 
         return MyProfileResponse.from(user);
+    }
+
+    // 응원팀 선택 목록 조회: enum 선언 순서를 유지하며 NONE도 포함
+    public List<SupportedTeamResponse> getSupportedTeams() {
+        return Arrays.stream(SupportedTeam.values())
+                .map(SupportedTeamResponse::from)
+                .toList();
     }
 }
