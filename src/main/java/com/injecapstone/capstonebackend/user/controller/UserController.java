@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.injecapstone.capstonebackend.user.dto.GameNotificationUpdateRequest;
 import com.injecapstone.capstonebackend.user.dto.SupportedTeamRequest;
 import com.injecapstone.capstonebackend.user.dto.SupportedTeamResponse;
+import com.injecapstone.capstonebackend.user.dto.LearningLevelResponse;
 
 import java.util.List;
 
@@ -101,6 +102,18 @@ public class UserController {
     public ResponseEntity<List<SupportedTeamResponse>> getSupportedTeams() {
         return ResponseEntity.ok(
                 userService.getSupportedTeams()
+        );
+    }
+
+    // 온보딩 및 마이페이지에서 사용할 학습 수준 선택 목록 조회
+    @Operation(
+            summary = "학습 수준 선택 목록 조회",
+            description = "학습 수준 코드와 표시 이름을 입문, 초보, 익숙 순서로 반환합니다."
+    )
+    @GetMapping("/learning-levels")
+    public ResponseEntity<List<LearningLevelResponse>> getLearningLevels() {
+        return ResponseEntity.ok(
+                userService.getLearningLevels()
         );
     }
 }
