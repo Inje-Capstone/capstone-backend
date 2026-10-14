@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.injecapstone.capstonebackend.user.domain.SupportedTeam;
 import com.injecapstone.capstonebackend.user.dto.SupportedTeamResponse;
+import com.injecapstone.capstonebackend.user.domain.LearningLevel;
+import com.injecapstone.capstonebackend.user.dto.LearningLevelResponse;
 
 import java.util.Arrays;
 import java.util.List;
@@ -122,6 +124,13 @@ public class UserService {
     public List<SupportedTeamResponse> getSupportedTeams() {
         return Arrays.stream(SupportedTeam.values())
                 .map(SupportedTeamResponse::from)
+                .toList();
+    }
+
+    // 학습 수준 선택 목록 조회: enum 선언 순서 유지
+    public List<LearningLevelResponse> getLearningLevels() {
+        return Arrays.stream(LearningLevel.values())
+                .map(LearningLevelResponse::from)
                 .toList();
     }
 }
