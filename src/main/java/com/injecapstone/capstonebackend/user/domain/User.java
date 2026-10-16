@@ -186,4 +186,10 @@ public class User {
         this.updatedAt = LocalDateTime.now();
 
     }
+
+    // 사용자가 선택한 학습 수준으로 변경
+    // 기존 진단 점수와 진단 완료 시각은 유지
+    public void changeLearningLevel(LearningLevel learningLevel) {
+        this.learningLevel = learningLevel;
+    }
 }

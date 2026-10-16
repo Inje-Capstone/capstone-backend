@@ -18,6 +18,7 @@ import com.injecapstone.capstonebackend.user.dto.GameNotificationUpdateRequest;
 import com.injecapstone.capstonebackend.user.dto.SupportedTeamRequest;
 import com.injecapstone.capstonebackend.user.dto.SupportedTeamResponse;
 import com.injecapstone.capstonebackend.user.dto.LearningLevelResponse;
+import com.injecapstone.capstonebackend.user.dto.LearningLevelUpdateRequest;
 
 import java.util.List;
 
@@ -114,6 +115,24 @@ public class UserController {
     public ResponseEntity<List<LearningLevelResponse>> getLearningLevels() {
         return ResponseEntity.ok(
                 userService.getLearningLevels()
+        );
+    }
+
+    // 로그인한 사용자의 학습 수준 변경
+    @Operation(
+            summary = "내 학습 수준 수정",
+            description = "학습 수준을 변경하고 변경된 내 정보를 반환합니다."
+    )
+    @PatchMapping("/me/learning-level")
+    public ResponseEntity<MyProfileResponse> updateLearningLevel(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody LearningLevelUpdateRequest request
+    ) {
+        return ResponseEntity.ok(
+                userService.updateLearningLevel(
+                        userId,
+                        request.learningLevel()
+                )
         );
     }
 }
