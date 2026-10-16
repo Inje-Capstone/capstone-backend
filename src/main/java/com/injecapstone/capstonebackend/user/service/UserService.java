@@ -133,4 +133,17 @@ public class UserService {
                 .map(LearningLevelResponse::from)
                 .toList();
     }
+
+    // 본인의 학습 수준을 변경하고 변경된 내 정보 반환
+    @Transactional
+    public MyProfileResponse updateLearningLevel(
+            Long userId,
+            LearningLevel learningLevel
+    ) {
+        User user = findUser(userId);
+
+        user.changeLearningLevel(learningLevel);
+
+        return MyProfileResponse.from(user);
+    }
 }
