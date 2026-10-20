@@ -9,19 +9,26 @@ public record MyProfileResponse(
         String email,
         String nickname,
         LearningLevel learningLevel,
+        String learningLevelDisplayName,
         SupportedTeam supportedTeam,
+        String supportedTeamDisplayName,
         boolean gameNotificationEnabled,
         boolean onboardingCompleted
 ) {
 
-    // 사용자 정보를 내 정보 조회 응답으로 변환
+    // 사용자 정보와 선택값의 표시 이름을 내 정보 응답으로 변환
     public static MyProfileResponse from(User user) {
+        LearningLevel learningLevel = user.getLearningLevel();
+        SupportedTeam supportedTeam = user.getSupportedTeam();
+
         return new MyProfileResponse(
                 user.getId(),
                 user.getEmail(),
                 user.getNickname(),
-                user.getLearningLevel(),
-                user.getSupportedTeam(),
+                learningLevel,
+                learningLevel != null ? learningLevel.getDisplayName() : null,
+                supportedTeam,
+                supportedTeam != null ? supportedTeam.getDisplayName() : null,
                 Boolean.TRUE.equals(user.getGameNotificationEnabled()),
                 user.isOnboardingCompleted()
         );
