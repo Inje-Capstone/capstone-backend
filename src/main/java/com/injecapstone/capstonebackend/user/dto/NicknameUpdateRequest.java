@@ -14,4 +14,11 @@ public record NicknameUpdateRequest(
         String nickname
 
 ) {
+
+        // DTO 생성 시 앞뒤 공백을 제거한 뒤 검증하도록 처리
+        public NicknameUpdateRequest {
+                if (nickname != null) {
+                        nickname = nickname.strip();
+                }
+        }
 }
