@@ -19,4 +19,11 @@ public record SignUpRequest(
         String nickname
 
 ) {
+
+        // 회원가입 닉네임의 앞뒤 공백을 제거한 뒤 검증
+        public SignUpRequest {
+                if (nickname != null) {
+                        nickname = nickname.strip();
+                }
+        }
 }
