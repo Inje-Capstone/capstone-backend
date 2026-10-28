@@ -51,11 +51,42 @@ jobs:
 
           echo "Command ID: $COMMAND_ID"
 
-          aws ssm wait command-executed \
-            --command-id "$COMMAND_ID" \
-            --instance-id "${{ vars.EC2_INSTANCE_ID }}"
+          # 최대 약 10분 동안 SSM 명령 상태 확인
+          DEPLOY_STATUS="Pending"
+          STATUS_ERROR_FILE="$RUNNER_TEMP/ssm-status-error.log"
 
+          for attempt in {1..60}; do
+            if DEPLOY_STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "${{ vars.EC2_INSTANCE_ID }}" \
+              --query "Status" \
+              --output text 2>"$STATUS_ERROR_FILE"); then
+
+              echo "[$attempt/60] SSM status: $DEPLOY_STATUS"
+
+              case "$DEPLOY_STATUS" in
+                Success|Failed|Cancelled|TimedOut)
+                  break
+                  ;;
+              esac
+            elif grep -q "InvocationDoesNotExist" "$STATUS_ERROR_FILE"; then
+              DEPLOY_STATUS="Pending"
+              echo "[$attempt/60] Waiting for SSM invocation"
+            else
+              cat "$STATUS_ERROR_FILE" >&2
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          # 성공·실패 판단 전에 서버 실행 결과 출력
           aws ssm get-command-invocation \
             --command-id "$COMMAND_ID" \
             --instance-id "${{ vars.EC2_INSTANCE_ID }}" \
             --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}'
+
+          if [ "$DEPLOY_STATUS" != "Success" ]; then
+            echo "Deployment did not succeed within the wait limit. Last status: $DEPLOY_STATUS"
+            exit 1
+          fi
