@@ -3,7 +3,10 @@ package com.injecapstone.capstonebackend.quiz.service;
 import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse.Option;
 import org.springframework.stereotype.Service;
-
+import com.injecapstone.capstonebackend.global.error.BusinessException;
+import com.injecapstone.capstonebackend.global.error.ErrorCode;
+import com.injecapstone.capstonebackend.quiz.dto.QuizAnswerResponse;
+import java.util.Map;
 import java.util.List;
 
 @Service
@@ -20,6 +23,26 @@ public class LearningQuizService {
                     )
             )
     );
+    private static final Map<Integer, Integer> CORRECT_OPTION_IDS = Map.of(1, 1);
+
+    public QuizAnswerResponse grade(int questionId, int optionId) {
+        QuizQuestionResponse question = QUESTIONS.stream()
+                .filter(item -> item.questionId() == questionId)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+
+        boolean validOption = question.options().stream()
+                .anyMatch(option -> option.optionId() == optionId);
+
+        if (!validOption) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        return new QuizAnswerResponse(
+                questionId,
+                Integer.valueOf(optionId).equals(CORRECT_OPTION_IDS.get(questionId))
+        );
+    }
 
     public List<QuizQuestionResponse> getQuestions() {
         return QUESTIONS;
