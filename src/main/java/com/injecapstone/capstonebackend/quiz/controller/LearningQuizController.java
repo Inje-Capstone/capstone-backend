@@ -9,7 +9,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import com.injecapstone.capstonebackend.quiz.dto.QuizAnswerRequest;
+import com.injecapstone.capstonebackend.quiz.dto.QuizAnswerResponse;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
 @RestController
@@ -27,5 +32,18 @@ public class LearningQuizController {
     @GetMapping("/questions")
     public ResponseEntity<List<QuizQuestionResponse>> getQuestions() {
         return ResponseEntity.ok(learningQuizService.getQuestions());
+    }
+    @Operation(
+            summary = "학습용 퀴즈 답안 채점",
+            description = "제출한 선택지의 정답 여부를 반환합니다."
+    )
+    @PostMapping("/questions/{questionId}/answers")
+    public ResponseEntity<QuizAnswerResponse> grade(
+            @PathVariable("questionId") int questionId,
+            @Valid @RequestBody QuizAnswerRequest request
+    ) {
+        return ResponseEntity.ok(
+                learningQuizService.grade(questionId, request.optionId())
+        );
     }
 }
