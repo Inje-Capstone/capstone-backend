@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import java.util.List;
 
 @RestController
@@ -34,16 +35,21 @@ public class LearningQuizController {
         return ResponseEntity.ok(learningQuizService.getQuestions());
     }
     @Operation(
-            summary = "학습용 퀴즈 답안 채점",
-            description = "제출한 선택지의 정답 여부를 반환합니다."
+            summary = "학습용 퀴즈 답안 채점 및 기록 저장",
+            description = "답안을 채점하고 로그인한 사용자의 풀이 기록을 저장합니다."
     )
     @PostMapping("/questions/{questionId}/answers")
     public ResponseEntity<QuizAnswerResponse> grade(
+            @AuthenticationPrincipal Long userId,
             @PathVariable("questionId") int questionId,
             @Valid @RequestBody QuizAnswerRequest request
     ) {
         return ResponseEntity.ok(
-                learningQuizService.grade(questionId, request.optionId())
+                learningQuizService.grade(
+                        userId,
+                        questionId,
+                        request.optionId()
+                )
         );
     }
 }
