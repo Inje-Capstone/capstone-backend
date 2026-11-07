@@ -9,6 +9,7 @@ import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse.Option;
 import com.injecapstone.capstonebackend.quiz.repository.QuizAttemptRepository;
 import com.injecapstone.capstonebackend.user.domain.User;
 import com.injecapstone.capstonebackend.user.repository.UserRepository;
+import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +41,14 @@ public class LearningQuizService {
 
     public List<QuizQuestionResponse> getQuestions() {
         return QUESTIONS;
+    }
+    @Transactional(readOnly = true)
+    public List<QuizAttemptResponse> getMyAttempts(Long userId) {
+        return quizAttemptRepository
+                .findTop20ByUser_IdOrderBySubmittedAtDescIdDesc(userId)
+                .stream()
+                .map(QuizAttemptResponse::from)
+                .toList();
     }
 
     @Transactional
