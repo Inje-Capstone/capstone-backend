@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptResponse;
 import java.util.List;
 
 @RestController
@@ -51,5 +52,15 @@ public class LearningQuizController {
                         request.optionId()
                 )
         );
+    }
+    @Operation(
+            summary = "내 퀴즈 풀이 기록 조회",
+            description = "로그인한 사용자의 최근 퀴즈 풀이 기록을 최신순으로 최대 20건 조회합니다."
+    )
+    @GetMapping("/attempts")
+    public ResponseEntity<List<QuizAttemptResponse>> getMyAttempts(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ResponseEntity.ok(learningQuizService.getMyAttempts(userId));
     }
 }
