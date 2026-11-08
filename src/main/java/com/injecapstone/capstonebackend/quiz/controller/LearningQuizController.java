@@ -1,6 +1,6 @@
 package com.injecapstone.capstonebackend.quiz.controller;
 
-import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse;
+import com.injecapstone.capstonebackend.quiz.dto.*;
 import com.injecapstone.capstonebackend.quiz.service.LearningQuizService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -9,14 +9,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.injecapstone.capstonebackend.quiz.dto.QuizAnswerRequest;
-import com.injecapstone.capstonebackend.quiz.dto.QuizAnswerResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptResponse;
+
 import java.util.List;
 
 @RestController
@@ -62,5 +60,13 @@ public class LearningQuizController {
             @AuthenticationPrincipal Long userId
     ) {
         return ResponseEntity.ok(learningQuizService.getMyAttempts(userId));
+    }
+
+    @Operation(summary = "내 퀴즈 풀이 요약 조회")
+    @GetMapping("/attempts/summary")
+    public ResponseEntity<QuizAttemptSummaryResponse> getMyAttemptSummary(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ResponseEntity.ok(learningQuizService.getMyAttemptSummary(userId));
     }
 }
