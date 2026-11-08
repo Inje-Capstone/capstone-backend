@@ -4,6 +4,7 @@ import com.injecapstone.capstonebackend.global.error.BusinessException;
 import com.injecapstone.capstonebackend.global.error.ErrorCode;
 import com.injecapstone.capstonebackend.quiz.domain.QuizAttempt;
 import com.injecapstone.capstonebackend.quiz.dto.QuizAnswerResponse;
+import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptSummaryResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse.Option;
 import com.injecapstone.capstonebackend.quiz.repository.QuizAttemptRepository;
@@ -86,5 +87,25 @@ public class LearningQuizService {
         );
 
         return new QuizAnswerResponse(questionId, correct);
+    }
+
+    @Transactional(readOnly = true)
+    public QuizAttemptSummaryResponse getMyAttemptSummary(Long userId) {
+        long correctCount = 0;
+        long incorrectCount = 0;
+
+        for (var count : quizAttemptRepository.countByCorrectForUser(userId)) {
+            if (count.getCorrect()) {
+                correctCount = count.getAttemptCount();
+            } else {
+                incorrectCount = count.getAttemptCount();
+            }
+        }
+
+        return new QuizAttemptSummaryResponse(
+                correctCount + incorrectCount,
+                correctCount,
+                incorrectCount
+        );
     }
 }
