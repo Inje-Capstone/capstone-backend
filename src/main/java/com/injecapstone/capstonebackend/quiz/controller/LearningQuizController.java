@@ -6,13 +6,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.List;
@@ -53,13 +48,14 @@ public class LearningQuizController {
     }
     @Operation(
             summary = "내 퀴즈 풀이 기록 조회",
-            description = "로그인한 사용자의 최근 퀴즈 풀이 기록을 최신순으로 최대 20건 조회합니다."
+            description = "본인의 최근 퀴즈 풀이 기록을 최대 20건 조회합니다. correct로 정답 또는 오답만 조회할 수 있습니다."
     )
     @GetMapping("/attempts")
     public ResponseEntity<List<QuizAttemptResponse>> getMyAttempts(
-            @AuthenticationPrincipal Long userId
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(name = "correct", required = false) Boolean correct
     ) {
-        return ResponseEntity.ok(learningQuizService.getMyAttempts(userId));
+        return ResponseEntity.ok(learningQuizService.getMyAttempts(userId, correct));
     }
 
     @Operation(summary = "내 퀴즈 풀이 요약 조회")
