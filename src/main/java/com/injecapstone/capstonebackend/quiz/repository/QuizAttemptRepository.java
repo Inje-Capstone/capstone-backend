@@ -22,4 +22,9 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
         boolean getCorrect();
         long getAttemptCount();
     }
+
+    List<QuizAttempt> findTop20ByUser_IdAndCorrectOrderBySubmittedAtDescIdDesc(
+            Long userId,
+            boolean correct
+    );
 }
