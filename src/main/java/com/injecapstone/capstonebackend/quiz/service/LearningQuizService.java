@@ -44,19 +44,6 @@ public class LearningQuizService {
         return QUESTIONS;
     }
 
-    @Transactional(readOnly = true)
-    public List<QuizAttemptResponse> getMyAttempts(Long userId, Boolean correct) {
-        List<QuizAttempt> attempts = correct == null
-                ? quizAttemptRepository.findTop20ByUser_IdOrderBySubmittedAtDescIdDesc(userId)
-                : quizAttemptRepository.findTop20ByUser_IdAndCorrectOrderBySubmittedAtDescIdDesc(
-                userId, correct
-        );
-
-        return attempts.stream()
-                .map(QuizAttemptResponse::from)
-                .toList();
-    }
-
     @Transactional
     public QuizAnswerResponse grade(
             Long userId,
@@ -95,6 +82,24 @@ public class LearningQuizService {
     }
 
     @Transactional(readOnly = true)
+    public List<QuizAttemptResponse> getMyAttempts(Long userId, Boolean correct, int limit) {
+        if (limit < 1 || limit > 20) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        List<QuizAttempt> attempts = correct == null
+                ? quizAttemptRepository.findTop20ByUser_IdOrderBySubmittedAtDescIdDesc(userId)
+                : quizAttemptRepository.findTop20ByUser_IdAndCorrectOrderBySubmittedAtDescIdDesc(
+                userId, correct
+        );
+
+        return attempts.stream()
+                .limit(limit)
+                .map(QuizAttemptResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public QuizAttemptSummaryResponse getMyAttemptSummary(Long userId) {
         long correctCount = 0;
         long incorrectCount = 0;
@@ -113,4 +118,5 @@ public class LearningQuizService {
                 incorrectCount
         );
     }
+
 }
