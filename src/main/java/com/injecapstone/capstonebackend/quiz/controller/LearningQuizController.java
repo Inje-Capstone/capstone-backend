@@ -53,9 +53,10 @@ public class LearningQuizController {
     @GetMapping("/attempts")
     public ResponseEntity<List<QuizAttemptResponse>> getMyAttempts(
             @AuthenticationPrincipal Long userId,
-            @RequestParam(name = "correct", required = false) Boolean correct
+            @RequestParam(name = "correct", required = false) Boolean correct,
+            @RequestParam(name = "limit", defaultValue = "20") int limit
     ) {
-        return ResponseEntity.ok(learningQuizService.getMyAttempts(userId, correct));
+        return ResponseEntity.ok(learningQuizService.getMyAttempts(userId, correct, limit));
     }
 
     @Operation(summary = "내 퀴즈 풀이 요약 조회")
