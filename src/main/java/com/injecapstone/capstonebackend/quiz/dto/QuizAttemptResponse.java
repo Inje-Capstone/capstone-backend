@@ -8,14 +8,16 @@ public record QuizAttemptResponse(
         int questionId,
         int selectedOptionId,
         boolean correct,
-        LocalDateTime submittedAt
+        LocalDateTime submittedAt,
+        Long attemptId
 ) {
     public static QuizAttemptResponse from(QuizAttempt attempt) {
         return new QuizAttemptResponse(
                 attempt.getQuestionId(),
                 attempt.getSelectedOptionId(),
                 attempt.isCorrect(),
-                attempt.getSubmittedAt()
+                attempt.getSubmittedAt(),
+                attempt.getId()
         );
     }
 }
