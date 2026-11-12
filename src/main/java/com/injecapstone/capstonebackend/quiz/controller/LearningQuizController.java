@@ -66,4 +66,16 @@ public class LearningQuizController {
     ) {
         return ResponseEntity.ok(learningQuizService.getMyAttemptSummary(userId));
     }
+
+    @Operation(
+            summary = "내 퀴즈 풀이 기록 상세 조회",
+            description = "본인의 풀이 기록 한 건을 조회합니다. 조회할 수 없는 기록은 404를 반환합니다."
+    )
+    @GetMapping("/attempts/{attemptId}")
+    public ResponseEntity<QuizAttemptResponse> getMyAttempt(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable("attemptId") Long attemptId
+    ) {
+        return ResponseEntity.of(learningQuizService.getMyAttempt(userId, attemptId));
+    }
 }

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -117,6 +118,12 @@ public class LearningQuizService {
                 correctCount,
                 incorrectCount
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<QuizAttemptResponse> getMyAttempt(Long userId, Long attemptId) {
+        return quizAttemptRepository.findByIdAndUser_Id(attemptId, userId)
+                .map(QuizAttemptResponse::from);
     }
 
 }
