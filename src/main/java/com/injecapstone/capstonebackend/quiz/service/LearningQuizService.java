@@ -12,9 +12,13 @@ import com.injecapstone.capstonebackend.quiz.repository.QuizAttemptRepository;
 import com.injecapstone.capstonebackend.user.domain.User;
 import com.injecapstone.capstonebackend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,6 +26,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class LearningQuizService {
+
+    private static final int ATTEMPT_COUNT = 10;
 
     private final UserRepository userRepository;
     private final QuizAttemptRepository quizAttemptRepository;
@@ -70,10 +76,8 @@ public class LearningQuizService {
                         new BusinessException(ErrorCode.USER_NOT_FOUND)
                 );
 
-        boolean correct =
-                Integer.valueOf(optionId).equals(
-                        CORRECT_OPTION_IDS.get(questionId)
-                );
+        boolean correct = Integer.valueOf(optionId)
+                .equals(CORRECT_OPTION_IDS.get(questionId));
 
         quizAttemptRepository.save(
                 QuizAttempt.create(user, questionId, optionId, correct)
@@ -83,21 +87,43 @@ public class LearningQuizService {
     }
 
     @Transactional(readOnly = true)
-    public List<QuizAttemptResponse> getMyAttempts(Long userId, Boolean correct, int limit) {
-        if (limit < 1 || limit > 20) {
+    public List<QuizAttemptResponse> getMyAttempts(
+            Long userId,
+            Boolean correct,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        validateDate(startDate);
+        validateDate(endDate);
+
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
 
-        List<QuizAttempt> attempts = correct == null
-                ? quizAttemptRepository.findTop20ByUser_IdOrderBySubmittedAtDescIdDesc(userId)
-                : quizAttemptRepository.findTop20ByUser_IdAndCorrectOrderBySubmittedAtDescIdDesc(
-                userId, correct
-        );
+        LocalDateTime startAt =
+                startDate == null ? null : startDate.atStartOfDay();
 
-        return attempts.stream()
-                .limit(limit)
+        // 기존 submitted_at 컬럼의 datetime(6) 정밀도에 맞춰 종료일 전체를 포함합니다.
+        LocalDateTime endAt = endDate == null
+                ? null
+                : endDate.atTime(LocalTime.of(23, 59, 59, 999_999_000));
+
+        return quizAttemptRepository.findMyAttempts(
+                        userId,
+                        correct,
+                        startAt,
+                        endAt,
+                        PageRequest.of(0, ATTEMPT_COUNT)
+                )
+                .stream()
                 .map(QuizAttemptResponse::from)
                 .toList();
+    }
+
+    private void validateDate(LocalDate date) {
+        if (date != null && (date.getYear() < 1000 || date.getYear() > 9999)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -125,5 +151,4 @@ public class LearningQuizService {
         return quizAttemptRepository.findByIdAndUser_Id(attemptId, userId)
                 .map(QuizAttemptResponse::from);
     }
-
 }
