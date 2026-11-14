@@ -47,6 +47,12 @@ public class LearningQuizService {
     private static final Map<Integer, Integer> CORRECT_OPTION_IDS =
             Map.of(1, 1);
 
+    private static final Map<Integer, String> EXPLANATIONS = Map.of(
+            1,
+            "정답은 도루예요. 주자가 안타나 상대 수비의 실책 없이 "
+                    + "다음 베이스로 뛰어가 안전하게 도달하는 플레이를 말해요."
+    );
+
     public List<QuizQuestionResponse> getQuestions() {
         return QUESTIONS;
     }
@@ -76,14 +82,20 @@ public class LearningQuizService {
                         new BusinessException(ErrorCode.USER_NOT_FOUND)
                 );
 
-        boolean correct = Integer.valueOf(optionId)
-                .equals(CORRECT_OPTION_IDS.get(questionId));
+        int correctOptionId = CORRECT_OPTION_IDS.get(questionId);
+        boolean correct = optionId == correctOptionId;
+        String explanation = EXPLANATIONS.get(questionId);
 
         quizAttemptRepository.save(
                 QuizAttempt.create(user, questionId, optionId, correct)
         );
 
-        return new QuizAnswerResponse(questionId, correct);
+        return new QuizAnswerResponse(
+                questionId,
+                correct,
+                correctOptionId,
+                explanation
+        );
     }
 
     @Transactional(readOnly = true)
