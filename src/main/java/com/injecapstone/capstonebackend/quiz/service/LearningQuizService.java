@@ -86,7 +86,7 @@ public class LearningQuizService {
         boolean correct = optionId == correctOptionId;
         String explanation = EXPLANATIONS.get(questionId);
 
-        quizAttemptRepository.save(
+        QuizAttempt savedAttempt = quizAttemptRepository.save(
                 QuizAttempt.create(user, questionId, optionId, correct)
         );
 
@@ -94,7 +94,8 @@ public class LearningQuizService {
                 questionId,
                 correct,
                 correctOptionId,
-                explanation
+                explanation,
+                savedAttempt.getId()
         );
     }
 

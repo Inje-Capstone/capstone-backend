@@ -4,6 +4,7 @@ public record QuizAnswerResponse(
         int questionId,
         boolean correct,
         int correctOptionId,
-        String explanation
+        String explanation,
+        Long attemptId
 ) {
 }
