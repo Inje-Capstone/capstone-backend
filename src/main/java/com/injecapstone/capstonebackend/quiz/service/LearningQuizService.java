@@ -9,6 +9,7 @@ import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptSummaryResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse.Option;
 import com.injecapstone.capstonebackend.quiz.repository.QuizAttemptRepository;
+import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptDetailResponse;
 import com.injecapstone.capstonebackend.user.domain.User;
 import com.injecapstone.capstonebackend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -160,8 +161,34 @@ public class LearningQuizService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<QuizAttemptResponse> getMyAttempt(Long userId, Long attemptId) {
+    public Optional<QuizAttemptDetailResponse> getMyAttempt(
+            Long userId,
+            Long attemptId
+    ) {
         return quizAttemptRepository.findByIdAndUser_Id(attemptId, userId)
-                .map(QuizAttemptResponse::from);
+                .map(attempt -> {
+                    QuizQuestionResponse question = QUESTIONS.stream()
+                            .filter(item ->
+                                    item.questionId() == attempt.getQuestionId()
+                            )
+                            .findFirst()
+                            .orElseThrow(() ->
+                                    new IllegalStateException(
+                                            "풀이 기록에 해당하는 퀴즈 문제를 찾을 수 없습니다."
+                                    )
+                            );
+
+                    return new QuizAttemptDetailResponse(
+                            attempt.getQuestionId(),
+                            attempt.getSelectedOptionId(),
+                            attempt.isCorrect(),
+                            attempt.getSubmittedAt(),
+                            attempt.getId(),
+                            question.text(),
+                            question.options(),
+                            CORRECT_OPTION_IDS.get(question.questionId()),
+                            EXPLANATIONS.get(question.questionId())
+                    );
+                });
     }
 }

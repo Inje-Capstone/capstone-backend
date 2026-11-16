@@ -6,6 +6,7 @@ import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptSummaryResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse;
 import com.injecapstone.capstonebackend.quiz.service.LearningQuizService;
+import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -90,13 +91,19 @@ public class LearningQuizController {
 
     @Operation(
             summary = "내 퀴즈 풀이 기록 상세 조회",
-            description = "본인의 풀이 기록 한 건을 조회합니다. 조회할 수 없는 기록은 404를 반환합니다."
+            description = """
+                본인의 풀이 기록과 문제 내용, 선택지, 정답 및 해설을 조회합니다.
+                문제와 해설은 현재 등록된 내용을 기준으로 반환합니다.
+                존재하지 않거나 다른 사용자의 기록이면 404를 반환합니다.
+                """
     )
     @GetMapping("/attempts/{attemptId}")
-    public ResponseEntity<QuizAttemptResponse> getMyAttempt(
+    public ResponseEntity<QuizAttemptDetailResponse> getMyAttempt(
             @AuthenticationPrincipal Long userId,
             @PathVariable("attemptId") Long attemptId
     ) {
-        return ResponseEntity.of(learningQuizService.getMyAttempt(userId, attemptId));
+        return ResponseEntity.of(
+                learningQuizService.getMyAttempt(userId, attemptId)
+        );
     }
 }
