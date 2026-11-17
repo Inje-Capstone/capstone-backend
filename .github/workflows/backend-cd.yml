@@ -43,8 +43,9 @@ jobs:
               "runuser -u ssm-user -- git -C /home/ssm-user/app/capstone-backend fetch origin",
               "runuser -u ssm-user -- git -C /home/ssm-user/app/capstone-backend reset --hard origin/develop",
               "cd /home/ssm-user/app/capstone-backend",
-              "docker compose up -d --build",
-              "docker compose ps"
+              "docker compose -f docker-compose.yml -f docker-compose.monitoring.yml config --quiet",
+              "docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d --build",
+              "docker compose -f docker-compose.yml -f docker-compose.monitoring.yml ps"
             ]' \
             --query "Command.CommandId" \
             --output text)
