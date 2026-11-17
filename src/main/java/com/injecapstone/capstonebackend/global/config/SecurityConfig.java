@@ -1,19 +1,20 @@
 package com.injecapstone.capstonebackend.global.config;
 
-import com.injecapstone.capstonebackend.auth.social.handler.OAuth2AuthenticationSuccessHandler;
 import com.injecapstone.capstonebackend.auth.social.handler.OAuth2AuthenticationFailureHandler;
+import com.injecapstone.capstonebackend.auth.social.handler.OAuth2AuthenticationSuccessHandler;
 import com.injecapstone.capstonebackend.global.jwt.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.config.Customizer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 
 @Configuration
 @RequiredArgsConstructor
@@ -23,10 +24,10 @@ public class SecurityConfig {
     private final OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oauth2AuthenticationFailureHandler;
 
-
-        @Bean
+    @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http
+            HttpSecurity http,
+            @Value("${management.server.port}") int managementPort
     ) throws Exception {
 
         http
@@ -40,15 +41,13 @@ public class SecurityConfig {
                                 SessionCreationPolicy.STATELESS
                         )
                 )
+
                 .exceptionHandling(exception -> exception
-                        // 인증 정보가 없거나 인증에 실패한 경우
                         .authenticationEntryPoint((request, response, authException) ->
                                 response.setStatus(
                                         HttpServletResponse.SC_UNAUTHORIZED
                                 )
                         )
-
-                        // 인증은 되었지만 접근 권한이 없는 경우
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 response.setStatus(
                                         HttpServletResponse.SC_FORBIDDEN
@@ -57,6 +56,20 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        // 관리 포트에서만 상태 확인 및 Prometheus 수집 허용
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/prometheus"
+                        ).access((authentication, context) ->
+                                new AuthorizationDecision(
+                                        context.getRequest().getLocalPort()
+                                                == managementPort
+                                )
+                        )
+
+                        // 그 외 Actuator 경로 차단
+                        .requestMatchers("/actuator", "/actuator/**").denyAll()
+
                         // 회원가입, 로그인, OAuth 코드 교환
                         .requestMatchers("/api/auth/**").permitAll()
 
@@ -76,6 +89,7 @@ public class SecurityConfig {
                         // 그 외 API는 JWT 인증 필요
                         .anyRequest().authenticated()
                 )
+
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oauth2AuthenticationSuccessHandler)
                         .failureHandler(oauth2AuthenticationFailureHandler)
