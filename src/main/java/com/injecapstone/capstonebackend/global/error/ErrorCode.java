@@ -51,6 +51,16 @@ public enum ErrorCode {
     INVALID_INPUT(
             HttpStatus.BAD_REQUEST,
             "입력값이 올바르지 않습니다."
+    ),
+
+    AI_ENDPOINT_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "지원하지 않는 AI 경로입니다."
+    ),
+
+    AI_SERVICE_UNAVAILABLE(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "AI 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."
     );
 
     private final HttpStatus status;

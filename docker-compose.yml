@@ -42,6 +42,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      ai:
+        condition: service_started
 
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/injecapstone?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
@@ -58,11 +60,29 @@ services:
 
       MANAGEMENT_SERVER_ADDRESS: 0.0.0.0
 
+      AI_BASE_URL: ${AI_BASE_URL:-http://ai:8000}
+
 
 
 
     ports:
       - "127.0.0.1:8080:8080"
+
+
+  # AI 엔진(capstone-AI). 포트는 열지 않는다 — 백엔드가 내부망 http://ai:8000으로만 부른다.
+  # 소스는 이 레포 옆 capstone-AI 폴더(CD가 clone·갱신). 키가 없으면 AI는 mock LLM으로 돈다.
+  ai:
+    build:
+      context: ${AI_REPO_DIR:-../capstone-AI}
+      dockerfile: Dockerfile
+
+    container_name: inje-capstone-ai
+    restart: unless-stopped
+
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_WORKSPACE_ID: ${ANTHROPIC_WORKSPACE_ID:-}
+      ROOKIE_CORS_ORIGINS: ${FRONTEND_URL:-https://injecapstone.com}
 
 
 volumes:
