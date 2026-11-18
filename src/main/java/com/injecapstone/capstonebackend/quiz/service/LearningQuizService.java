@@ -172,10 +172,17 @@ public class LearningQuizService {
             }
         }
 
+        long totalCount = correctCount + incorrectCount;
+
+        double accuracyRate = totalCount == 0
+                ? 0.0
+                : Math.round(correctCount * 1000.0 / totalCount) / 10.0;
+
         return new QuizAttemptSummaryResponse(
-                correctCount + incorrectCount,
+                totalCount,
                 correctCount,
-                incorrectCount
+                incorrectCount,
+                accuracyRate
         );
     }
 
