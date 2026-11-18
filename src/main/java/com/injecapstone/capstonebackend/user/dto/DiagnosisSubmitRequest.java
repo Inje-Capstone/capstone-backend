@@ -10,8 +10,9 @@ import java.util.List;
 
 public record DiagnosisSubmitRequest(
 
+        // 문항 수는 문제은행(AI 또는 임시 문항)이 정한다 — 모두 답했는지는 채점에서 확인
         @NotNull
-        @Size(min = 3, max = 3, message = "3문항에 모두 답해주세요.")
+        @Size(min = 1, max = 20, message = "모든 문항에 답해주세요.")
         List<@NotNull @Valid Answer> answers
 
 ) {
@@ -20,12 +21,13 @@ public record DiagnosisSubmitRequest(
 
             @NotNull
             @Min(1)
-            @Max(3)
+            @Max(20)
             Integer questionId,
 
+            // AI 문제은행은 보기 4개, 임시 문항은 3개
             @NotNull
             @Min(1)
-            @Max(3)
+            @Max(4)
             Integer optionId
 
     ) {

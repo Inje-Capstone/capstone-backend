@@ -38,8 +38,10 @@ public class LearningQuizController {
             description = "학습용 퀴즈의 문제와 선택지를 조회합니다. 정답은 반환하지 않습니다."
     )
     @GetMapping("/questions")
-    public ResponseEntity<List<QuizQuestionResponse>> getQuestions() {
-        return ResponseEntity.ok(learningQuizService.getQuestions());
+    public ResponseEntity<List<QuizQuestionResponse>> getQuestions(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ResponseEntity.ok(learningQuizService.getQuestions(userId));
     }
 
     @Operation(
