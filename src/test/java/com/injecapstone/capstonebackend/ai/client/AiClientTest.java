@@ -82,15 +82,38 @@ class AiClientTest {
 
     @Test
     void 학습_퀴즈는_개수와_시드를_쿼리로_보낸다() {
-        server.expect(requestTo(BASE + "/api/backend/quiz/questions?count=5&seed=7-2026-11-18"))
+        server.expect(requestTo(BASE + "/api/backend/quiz/questions?count=5&seed=7-2026-11-18"
+                        + "&term_id=balk&term_id=walk"))
                 .andRespond(withSuccess("""
                         [{"questionId":1001,"termId":"balk","text":"보크는?",
                           "options":[{"optionId":1,"text":"a"},{"optionId":2,"text":"b"}]}]
                         """, MediaType.APPLICATION_JSON));
 
-        List<AiQuizQuestion> questions = client.quizQuestions(5, "7-2026-11-18");
+        List<AiQuizQuestion> questions = client.quizQuestions(5, "7-2026-11-18", List.of("balk", "walk"));
 
         assertThat(questions).extracting("questionId").containsExactly(1001);
+    }
+
+    @Test
+    void 오늘_본_룰은_snake_case를_읽고_없는_경기는_빈_값() {
+        server.expect(requestTo(BASE + "/api/games/G1/today-rules?t=600&level=INTRODUCTORY"))
+                .andRespond(withSuccess("""
+                        {"game_id":"G1","t":600,"level":0,"rules":[],"term_ids":["balk","walk"]}
+                        """, MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/api/games/NOPE/today-rules?t=1&level=INTRODUCTORY"))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        assertThat(client.todayRules("G1", 600, "INTRODUCTORY"))
+                .hasValueSatisfying(rules -> assertThat(rules.termIds()).containsExactly("balk", "walk"));
+        assertThat(client.todayRules("NOPE", 1, "INTRODUCTORY")).isEmpty();
+    }
+
+    @Test
+    void 본_용어에_맞는_문항이_없으면_빈_목록() {
+        server.expect(requestTo(BASE + "/api/backend/quiz/questions?count=5&seed=s&term_id=x"))
+                .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+
+        assertThat(client.quizQuestions(5, "s", List.of("x"))).isEmpty();
     }
 
     @Test
