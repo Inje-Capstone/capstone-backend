@@ -86,8 +86,9 @@ public class SecurityConfig {
 
                         .requestMatchers("/error").permitAll()
 
-                        // AI 엔진 중계 (경기·카드·용어·챗봇) — 허용 경로는 AiProxyPaths가 검사
-                        .requestMatchers("/api/ai/**").permitAll()
+                        // AI 엔진 중계(/api/ai/**)도 JWT 인증 필요 — 카드·챗봇이 LLM을 불러 비용이 든다.
+                        // 허용 경로는 AiProxyPaths가 따로 검사한다.
+                        .requestMatchers("/api/ai/**").authenticated()
 
                         // 그 외 API는 JWT 인증 필요
                         .anyRequest().authenticated()
