@@ -35,9 +35,15 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
             SELECT a.correct AS correct, COUNT(a) AS attemptCount
             FROM QuizAttempt a
             WHERE a.user.id = :userId
+              AND (:startAt IS NULL OR a.submittedAt >= :startAt)
+              AND (:endAt IS NULL OR a.submittedAt <= :endAt)
             GROUP BY a.correct
             """)
-    List<AttemptCount> countByCorrectForUser(@Param("userId") Long userId);
+    List<AttemptCount> countByCorrectForUser(
+            @Param("userId") Long userId,
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt
+    );
 
     interface AttemptCount {
         boolean getCorrect();

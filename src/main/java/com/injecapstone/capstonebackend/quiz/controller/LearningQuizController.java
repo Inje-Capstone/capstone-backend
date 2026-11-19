@@ -83,12 +83,26 @@ public class LearningQuizController {
         );
     }
 
-    @Operation(summary = "내 퀴즈 풀이 요약 조회")
+    @Operation(
+            summary = "내 퀴즈 풀이 요약 조회",
+            description = """
+                    지정한 기간의 풀이 수, 정답 수, 오답 수, 정답률(%)을 반환합니다.
+                    startDate와 endDate는 yyyy-MM-dd 형식이며 각각 생략할 수 있습니다.
+                    저장된 submittedAt 기준으로 시작일과 종료일을 모두 포함합니다.
+                    둘 다 생략하면 전체 기간의 통계를 반환합니다.
+                    """
+    )
     @GetMapping("/attempts/summary")
     public ResponseEntity<QuizAttemptSummaryResponse> getMyAttemptSummary(
-            @AuthenticationPrincipal Long userId
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(name = "startDate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(name = "endDate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
-        return ResponseEntity.ok(learningQuizService.getMyAttemptSummary(userId));
+        return ResponseEntity.ok(
+                learningQuizService.getMyAttemptSummary(userId, startDate, endDate)
+        );
     }
 
     @Operation(
