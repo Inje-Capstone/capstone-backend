@@ -5,6 +5,8 @@ import com.injecapstone.capstonebackend.quiz.dto.QuizAnswerResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptSummaryResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse;
+import com.injecapstone.capstonebackend.quiz.dto.ViewedRulesRequest;
+import com.injecapstone.capstonebackend.quiz.dto.ViewedRulesResponse;
 import com.injecapstone.capstonebackend.quiz.service.LearningQuizService;
 import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,13 +37,40 @@ public class LearningQuizController {
 
     @Operation(
             summary = "학습용 퀴즈 문제 조회",
-            description = "학습용 퀴즈의 문제와 선택지를 조회합니다. 정답은 반환하지 않습니다."
+            description = """
+                    오늘 본 용어(시청 기록)로만 최대 5문제를 냅니다. 정답은 반환하지 않습니다.
+                    오늘 본 용어가 없으면 빈 목록입니다. 같은 날 같은 사용자는 같은 문제입니다.
+                    """
     )
     @GetMapping("/questions")
     public ResponseEntity<List<QuizQuestionResponse>> getQuestions(
             @AuthenticationPrincipal Long userId
     ) {
         return ResponseEntity.ok(learningQuizService.getQuestions(userId));
+    }
+
+    @Operation(
+            summary = "시청 기록 저장 (오늘 본 룰)",
+            description = """
+                    경기 영상을 t초까지 봤다고 알립니다. AI가 그 구간에서 설명 카드로 보여 준 용어를
+                    오늘 본 용어에 더하고, 오늘 본 용어 전체를 돌려줍니다.
+                    학습 퀴즈는 오늘 본 용어로만 나옵니다 — 시청 종료·화면 이탈 때 호출하세요.
+                    """
+    )
+    @PostMapping("/viewed-rules")
+    public ResponseEntity<ViewedRulesResponse> recordViewed(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody ViewedRulesRequest request
+    ) {
+        return ResponseEntity.ok(learningQuizService.recordViewed(userId, request));
+    }
+
+    @Operation(summary = "오늘 본 용어 조회")
+    @GetMapping("/viewed-rules")
+    public ResponseEntity<ViewedRulesResponse> getViewedRules(
+            @AuthenticationPrincipal Long userId
+    ) {
+        return ResponseEntity.ok(learningQuizService.getViewedRules(userId));
     }
 
     @Operation(
