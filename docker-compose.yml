@@ -45,6 +45,11 @@ services:
       ai:
         condition: service_started
 
+    env_file:
+      - path: ./.env.password-reset
+        required: false
+        format: raw
+
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/injecapstone?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}

@@ -26,7 +26,7 @@ import java.util.Optional;
 public class PasswordResetTokenService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
-    private static final Duration TOKEN_TTL = Duration.ofMinutes(5);
+    static final Duration TOKEN_TTL = Duration.ofMinutes(5);
     private static final Duration RESEND_INTERVAL = Duration.ofMinutes(1);
     private final PasswordEncoder passwordEncoder;
 

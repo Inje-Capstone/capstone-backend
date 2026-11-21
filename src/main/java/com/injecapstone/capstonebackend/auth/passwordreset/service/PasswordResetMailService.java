@@ -67,13 +67,13 @@ public class PasswordResetMailService {
         message.setTo(issued.email());
         message.setSubject("[LOOKIE] 비밀번호 재설정");
         message.setText("""
-                아래 링크에서 새 비밀번호를 설정할 수 있습니다.
-                링크는 발급 후 15분 동안 유효합니다.
+        아래 링크에서 새 비밀번호를 설정할 수 있습니다.
+        링크는 발급 후 %d분 동안 유효합니다.
 
-                %s
+        %s
 
-                요청한 적이 없다면 이 메일을 무시해 주세요.
-                """.formatted(link));
+        요청한 적이 없다면 이 메일을 무시해 주세요.
+        """.formatted(PasswordResetTokenService.TOKEN_TTL.toMinutes(), link));
         mailSender.send(message);
     }
 
