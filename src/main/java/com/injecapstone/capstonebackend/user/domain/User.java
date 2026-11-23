@@ -192,4 +192,7 @@ public class User {
     public void changeLearningLevel(LearningLevel learningLevel) {
         this.learningLevel = learningLevel;
     }
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }

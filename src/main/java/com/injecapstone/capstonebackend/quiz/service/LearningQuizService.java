@@ -195,26 +195,13 @@ public class LearningQuizService {
             LocalDate startDate,
             LocalDate endDate
     ) {
-        validateDate(startDate);
-        validateDate(endDate);
-
-        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-
-        LocalDateTime startAt =
-                startDate == null ? null : startDate.atStartOfDay();
-
-        // 기존 submitted_at 컬럼의 datetime(6) 정밀도에 맞춰 종료일 전체를 포함합니다.
-        LocalDateTime endAt = endDate == null
-                ? null
-                : endDate.atTime(LocalTime.of(23, 59, 59, 999_999_000));
+        AttemptDateRange range = resolveAttemptDateRange(startDate, endDate);
 
         return quizAttemptRepository.findMyAttempts(
                         userId,
                         correct,
-                        startAt,
-                        endAt,
+                        range.startAt(),
+                        range.endAt(),
                         PageRequest.of(0, ATTEMPT_COUNT)
                 )
                 .stream()
@@ -222,18 +209,48 @@ public class LearningQuizService {
                 .toList();
     }
 
-    private void validateDate(LocalDate date) {
+    private static AttemptDateRange resolveAttemptDateRange(
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        validateDate(startDate);
+        validateDate(endDate);
+
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        // submitted_at의 datetime(6) 정밀도에 맞춰 종료일 전체를 포함한다.
+        return new AttemptDateRange(
+                startDate == null ? null : startDate.atStartOfDay(),
+                endDate == null ? null : endDate.atTime(LocalTime.of(23, 59, 59, 999_999_000))
+        );
+    }
+
+    private static void validateDate(LocalDate date) {
         if (date != null && (date.getYear() < 1000 || date.getYear() > 9999)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
     }
 
+    private record AttemptDateRange(LocalDateTime startAt, LocalDateTime endAt) {
+    }
+
     @Transactional(readOnly = true)
-    public QuizAttemptSummaryResponse getMyAttemptSummary(Long userId) {
+    public QuizAttemptSummaryResponse getMyAttemptSummary(
+            Long userId,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        AttemptDateRange range = resolveAttemptDateRange(startDate, endDate);
         long correctCount = 0;
         long incorrectCount = 0;
 
-        for (var count : quizAttemptRepository.countByCorrectForUser(userId)) {
+        var counts = quizAttemptRepository.countByCorrectForUser(
+                userId, range.startAt(), range.endAt()
+        );
+
+        for (var count : counts) {
             if (count.getCorrect()) {
                 correctCount = count.getAttemptCount();
             } else {
@@ -242,7 +259,6 @@ public class LearningQuizService {
         }
 
         long totalCount = correctCount + incorrectCount;
-
         double accuracyRate = totalCount == 0
                 ? 0.0
                 : Math.round(correctCount * 1000.0 / totalCount) / 10.0;
