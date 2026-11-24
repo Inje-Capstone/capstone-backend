@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import com.injecapstone.capstonebackend.ai.dto.AiGameSummary;
 
 import java.net.URI;
 import java.util.List;
@@ -89,6 +90,23 @@ public class AiClient {
                 })
         );
         return requireNonEmpty(questions);
+    }
+
+    public boolean hasGameVideo(String gameId) {
+        List<AiGameSummary> games = call(() -> api.get()
+                .uri("/api/games")
+                .retrieve()
+                .body(new ParameterizedTypeReference<List<AiGameSummary>>() {
+                })
+        );
+
+        if (games == null) {
+            throw unavailable("경기 목록 응답이 비어 있음");
+        }
+
+        return games.stream().anyMatch(game ->
+                game != null && gameId.equals(game.id()) && game.hasVideo()
+        );
     }
 
     // 없는 문항이면 빈 값 — 호출하는 쪽이 임시 문항(예전 풀이 기록)으로 넘어갈 수 있게

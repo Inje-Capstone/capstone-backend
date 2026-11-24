@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 public interface PointTransactionRepository extends Repository<PointTransaction, Long> {
 
     <S extends PointTransaction> S save(S transaction);
+    boolean existsByUser_IdAndEventKey(Long userId, String eventKey);
 
     @Query("""
             select sum(pt.amount)
