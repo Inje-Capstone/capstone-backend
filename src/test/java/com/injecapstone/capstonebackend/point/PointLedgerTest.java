@@ -22,6 +22,24 @@ class PointLedgerTest {
 
     private static final Instant RECORDED_AT = Instant.parse("2026-11-23T01:00:00Z");
 
+    @Test
+    void awardsVideoClickOncePerAccountPerSeoulDay() {
+        User first = createUser("video-first");
+        User second = createUser("video-second");
+
+        Instant beforeMidnight = Instant.parse("2026-11-24T14:59:58Z");
+        Instant repeatClick = Instant.parse("2026-11-24T14:59:59Z");
+        Instant nextDay = Instant.parse("2026-11-24T15:00:00Z");
+
+        assertThat(points.awardVideoClick(first.getId(), beforeMidnight)).isTrue();
+        assertThat(points.awardVideoClick(first.getId(), repeatClick)).isFalse();
+        assertThat(points.awardVideoClick(second.getId(), repeatClick)).isTrue();
+        assertThat(points.awardVideoClick(first.getId(), nextDay)).isTrue();
+
+        assertThat(points.getBalance(first.getId())).isEqualTo(2L);
+        assertThat(points.getBalance(second.getId())).isEqualTo(1L);
+    }
+
     @Autowired
     private UserRepository users;
 
