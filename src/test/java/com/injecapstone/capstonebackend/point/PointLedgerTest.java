@@ -80,4 +80,43 @@ class PointLedgerTest {
                 User.create(nickname + "@example.test", "test-password-hash", nickname)
         );
     }
+
+    @Test
+    void awardsEachGameInningOncePerAccountEvenAcrossDays() {
+        User first = createUser("inning-first");
+        User second = createUser("inning-second");
+        Instant beforeMidnight = Instant.parse("2026-11-25T14:59:59Z");
+        Instant afterMidnight = Instant.parse("2026-11-25T15:00:00Z");
+
+        assertThat(points.awardVideoInning(first.getId(), "game-a", 1, beforeMidnight)).isTrue();
+        assertThat(points.awardVideoInning(first.getId(), "game-a", 1, beforeMidnight)).isFalse();
+        assertThat(points.awardVideoInning(first.getId(), "game-a", 1, afterMidnight)).isFalse();
+        assertThat(points.awardVideoInning(first.getId(), "game-b", 1, beforeMidnight)).isTrue();
+        assertThat(points.awardVideoInning(second.getId(), "game-a", 1, beforeMidnight)).isTrue();
+
+        assertThat(points.getBalance(first.getId())).isEqualTo(2L);
+        assertThat(points.getBalance(second.getId())).isEqualTo(1L);
+    }
+
+    @Test
+    void capsInningAwardsAtNineAcrossGamesAndResetsAtSeoulMidnight() {
+        User user = createUser("inning-limit");
+        Instant beforeMidnight = Instant.parse("2026-11-25T14:59:59.999999Z");
+        Instant afterMidnight = Instant.parse("2026-11-25T15:00:00Z");
+
+        assertThat(points.awardVideoClick(user.getId(), beforeMidnight)).isTrue();
+
+        for (int inning = 1; inning <= 5; inning++) {
+            assertThat(points.awardVideoInning(user.getId(), "game-a", inning, beforeMidnight)).isTrue();
+        }
+        for (int inning = 1; inning <= 4; inning++) {
+            assertThat(points.awardVideoInning(user.getId(), "game-b", inning, beforeMidnight)).isTrue();
+        }
+
+        assertThat(points.awardVideoInning(user.getId(), "game-b", 5, beforeMidnight)).isFalse();
+        assertThat(points.getBalance(user.getId())).isEqualTo(10L);
+
+        assertThat(points.awardVideoInning(user.getId(), "game-b", 5, afterMidnight)).isTrue();
+        assertThat(points.getBalance(user.getId())).isEqualTo(11L);
+    }
 }
