@@ -13,6 +13,25 @@ import java.util.Optional;
 public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> {
 
     @Query("""
+        SELECT a.user.id AS userId, COUNT(a) AS attemptCount
+        FROM QuizAttempt a
+        WHERE a.submittedAt >= :startAt
+          AND a.submittedAt < :endAt
+        GROUP BY a.user.id
+        HAVING COUNT(a) >= :minimumAttempts
+        """)
+    List<WeeklyRewardCandidate> findWeeklyRewardCandidates(
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt,
+            @Param("minimumAttempts") long minimumAttempts
+    );
+
+    interface WeeklyRewardCandidate {
+        Long getUserId();
+        long getAttemptCount();
+    }
+
+    @Query("""
             SELECT a
             FROM QuizAttempt a
             WHERE a.user.id = :userId

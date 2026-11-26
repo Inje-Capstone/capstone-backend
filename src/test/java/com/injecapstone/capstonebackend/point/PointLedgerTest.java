@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
-
+import java.time.LocalDate;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,6 +73,24 @@ class PointLedgerTest {
             transactions.save(new PointTransaction(user, 1, "test:one-event", RECORDED_AT));
             users.flush();
         }).isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void awardsWeeklyQuizMilestonesOnceAndCapsTheRewardAtSix() {
+        User user = createUser("weekly-quiz");
+        User other = createUser("weekly-other");
+        LocalDate weekStart = LocalDate.of(2026, 11, 16);
+        Instant awardedAt = Instant.parse("2026-11-23T00:00:00Z");
+
+        assertThat(points.awardWeeklyQuizReward(user.getId(), weekStart, 14, awardedAt)).isZero();
+        assertThat(points.awardWeeklyQuizReward(user.getId(), weekStart, 15, awardedAt)).isEqualTo(3);
+        assertThat(points.awardWeeklyQuizReward(user.getId(), weekStart, 29, awardedAt)).isZero();
+        assertThat(points.awardWeeklyQuizReward(user.getId(), weekStart, 30, awardedAt)).isEqualTo(3);
+        assertThat(points.awardWeeklyQuizReward(user.getId(), weekStart, 45, awardedAt)).isZero();
+
+        assertThat(points.awardWeeklyQuizReward(other.getId(), weekStart, 30, awardedAt)).isEqualTo(6);
+        assertThat(points.getBalance(user.getId())).isEqualTo(6L);
+        assertThat(points.getBalance(other.getId())).isEqualTo(6L);
     }
 
     private User createUser(String nickname) {

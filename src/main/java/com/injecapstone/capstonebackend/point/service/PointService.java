@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -86,5 +87,35 @@ public class PointService {
 
         pointTransactionRepository.save(new PointTransaction(user, 1, eventKey, recordedAt));
         return true;
+    }
+
+    @Transactional
+    public int awardWeeklyQuizReward(
+            Long userId, LocalDate weekStart, long submissionCount, Instant awardedAt
+    ) {
+        LocalDate today = LocalDate.ofInstant(awardedAt, SEOUL);
+        if (weekStart.getDayOfWeek() != DayOfWeek.MONDAY
+                || weekStart.plusWeeks(1).isAfter(today)
+                || submissionCount < 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        int milestones = (int) Math.min(submissionCount / 15, 2);
+        if (milestones == 0) {
+            return 0;
+        }
+
+        User user = userRepository.findByIdForPointUpdate(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        int awardedPoints = 0;
+        for (int milestone = 1; milestone <= milestones; milestone++) {
+            String eventKey = "quiz-weekly:" + weekStart + ":" + milestone;
+            if (!pointTransactionRepository.existsByUser_IdAndEventKey(userId, eventKey)) {
+                pointTransactionRepository.save(new PointTransaction(user, 3, eventKey, awardedAt));
+                awardedPoints += 3;
+            }
+        }
+        return awardedPoints;
     }
 }
