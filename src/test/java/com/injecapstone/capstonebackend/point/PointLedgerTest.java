@@ -1,6 +1,10 @@
 package com.injecapstone.capstonebackend.point;
 
+import com.injecapstone.capstonebackend.global.error.BusinessException;
 import com.injecapstone.capstonebackend.point.domain.PointTransaction;
+import com.injecapstone.capstonebackend.point.dto.PointHistoryResponse;
+import com.injecapstone.capstonebackend.point.dto.PointHistoryResponse.Item;
+import com.injecapstone.capstonebackend.point.dto.PointHistoryResponse.Type;
 import com.injecapstone.capstonebackend.point.repository.PointTransactionRepository;
 import com.injecapstone.capstonebackend.point.service.PointService;
 import com.injecapstone.capstonebackend.user.domain.User;
@@ -10,8 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
-import java.time.LocalDate;
+
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,6 +54,42 @@ class PointLedgerTest {
 
     @Autowired
     private PointService points;
+
+    @Test
+    void listsOnlyTheUsersTransactionsInStableNewestFirstPages() {
+        User user = createUser("history-user");
+        User other = createUser("history-other");
+        Instant earlier = RECORDED_AT.minusSeconds(60);
+
+        transactions.save(new PointTransaction(user, 1, "video-click:2026-11-23", RECORDED_AT));
+        transactions.save(new PointTransaction(user, 1, "video-inning:game:1", earlier));
+        transactions.save(new PointTransaction(user, 3, "quiz-weekly:2026-11-16:1", RECORDED_AT));
+        transactions.save(new PointTransaction(user, -2, "test:debit", earlier.minusSeconds(60)));
+        transactions.save(new PointTransaction(other, 7, "test:other", RECORDED_AT.plusSeconds(60)));
+
+        assertThat(points.getHistory(user.getId(), 0, 2)).isEqualTo(new PointHistoryResponse(
+                List.of(
+                        new Item(3, Type.WEEKLY_QUIZ, RECORDED_AT),
+                        new Item(1, Type.VIDEO_CLICK, RECORDED_AT)
+                ), 0, 2, true
+        ));
+        assertThat(points.getHistory(user.getId(), 1, 2)).isEqualTo(new PointHistoryResponse(
+                List.of(
+                        new Item(1, Type.VIDEO_INNING, earlier),
+                        new Item(-2, Type.OTHER, earlier.minusSeconds(60))
+                ), 1, 2, false
+        ));
+        assertThat(points.getHistory(user.getId(), 2, 2).items()).isEmpty();
+    }
+
+    @Test
+    void rejectsInvalidHistoryPageAndSize() {
+        assertThatThrownBy(() -> points.getHistory(1L, -1, 20)).isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> points.getHistory(1L, 0, 0)).isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> points.getHistory(1L, 0, 101)).isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> points.getHistory(1L, Integer.MAX_VALUE, 20))
+                .isInstanceOf(BusinessException.class);
+    }
 
     @Test
     void sumsEachUsersOwnTransactionsAndReturnsZeroWithoutRecords() {
