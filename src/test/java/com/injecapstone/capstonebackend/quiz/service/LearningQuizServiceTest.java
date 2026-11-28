@@ -4,6 +4,11 @@ import com.injecapstone.capstonebackend.ai.client.AiClient;
 import com.injecapstone.capstonebackend.ai.dto.AiOption;
 import com.injecapstone.capstonebackend.ai.dto.AiQuizQuestion;
 import com.injecapstone.capstonebackend.ai.dto.AiQuizQuestionDetail;
+import com.injecapstone.capstonebackend.ai.dto.AiTodayRules;
+import com.injecapstone.capstonebackend.quiz.domain.ViewedTerm;
+import com.injecapstone.capstonebackend.quiz.dto.ViewedRulesRequest;
+import com.injecapstone.capstonebackend.quiz.dto.ViewedRulesResponse;
+import com.injecapstone.capstonebackend.user.domain.LearningLevel;
 import com.injecapstone.capstonebackend.global.error.BusinessException;
 import com.injecapstone.capstonebackend.global.error.ErrorCode;
 import com.injecapstone.capstonebackend.quiz.domain.QuizAttempt;
@@ -11,6 +16,7 @@ import com.injecapstone.capstonebackend.quiz.dto.QuizAnswerResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizAttemptDetailResponse;
 import com.injecapstone.capstonebackend.quiz.dto.QuizQuestionResponse;
 import com.injecapstone.capstonebackend.quiz.repository.QuizAttemptRepository;
+import com.injecapstone.capstonebackend.quiz.repository.ViewedTermRepository;
 import com.injecapstone.capstonebackend.user.domain.User;
 import com.injecapstone.capstonebackend.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +45,7 @@ class LearningQuizServiceTest {
     private final UserRepository userRepository = mock(UserRepository.class);
     private final QuizAttemptRepository attemptRepository = mock(QuizAttemptRepository.class);
     private final AiClient ai = mock(AiClient.class);
+    private final ViewedTermRepository viewedTermRepository = mock(ViewedTermRepository.class);
     private final User user = mock(User.class);
 
     private LearningQuizService service;
@@ -49,7 +56,7 @@ class LearningQuizServiceTest {
         when(userRepository.findById(7L)).thenReturn(Optional.of(user));
         when(attemptRepository.save(any(QuizAttempt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-        service = new LearningQuizService(userRepository, attemptRepository, ai);
+        service = new LearningQuizService(userRepository, attemptRepository, ai, viewedTermRepository);
     }
 
     private AiQuizQuestionDetail detail(int questionId, int correctOptionId) {
@@ -59,9 +66,11 @@ class LearningQuizServiceTest {
     }
 
     @Test
-    void 사용자와_오늘_날짜로_AI_문항_5개를_받는다() {
+    void 오늘_본_용어로_AI_문항을_받는다() {
         String seed = "7-" + LocalDate.now(ZoneId.of("Asia/Seoul"));
-        when(ai.quizQuestions(5, seed)).thenReturn(List.of(
+        when(viewedTermRepository.findTermIds(7L, LocalDate.now(ZoneId.of("Asia/Seoul"))))
+                .thenReturn(List.of("balk"));
+        when(ai.quizQuestions(5, seed, List.of("balk"))).thenReturn(List.of(
                 new AiQuizQuestion(1001, "balk", "보크는?", OPTIONS)
         ));
 
@@ -71,6 +80,57 @@ class LearningQuizServiceTest {
         assertThat(questions.get(0).questionId()).isEqualTo(1001);
         assertThat(questions.get(0).options()).extracting("text")
                 .containsExactly("보크", "도루", "번트", "병살");
+    }
+
+    @Test
+    void 오늘_본_용어가_없으면_퀴즈가_없다() {
+        when(viewedTermRepository.findTermIds(any(), any())).thenReturn(List.of());
+
+        assertThat(service.getQuestions(7L)).isEmpty();
+        org.mockito.Mockito.verify(ai, org.mockito.Mockito.never())
+                .quizQuestions(org.mockito.ArgumentMatchers.anyInt(), any(), any());
+    }
+
+    @Test
+    void 시청_기록은_새로_본_용어만_저장하고_오늘_본_용어_전체를_돌려준다() {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        when(user.getLearningLevel()).thenReturn(null);
+        when(ai.todayRules("G1", 600, "INTRODUCTORY"))
+                .thenReturn(Optional.of(new AiTodayRules(List.of("balk", "walk", "Bad Id", "balk"))));
+        when(viewedTermRepository.findTermIds(7L, today))
+                .thenReturn(List.of("walk"))
+                .thenReturn(List.of("walk", "balk"));
+
+        ViewedRulesResponse response = service.recordViewed(7L, new ViewedRulesRequest("G1", 600));
+
+        ArgumentCaptor<ViewedTerm> saved = ArgumentCaptor.forClass(ViewedTerm.class);
+        verify(viewedTermRepository).save(saved.capture());
+        assertThat(saved.getValue().getTermId()).isEqualTo("balk");
+        assertThat(saved.getValue().getGameId()).isEqualTo("G1");
+        assertThat(saved.getValue().getViewedDate()).isEqualTo(today);
+        assertThat(response.termIds()).containsExactly("walk", "balk");
+        assertThat(response.date()).isEqualTo(today);
+    }
+
+    @Test
+    void 시청_기록은_학습_수준대로_AI에_묻고_없는_경기는_거부() {
+        when(user.getLearningLevel()).thenReturn(LearningLevel.FAMILIAR);
+        when(ai.todayRules("NOPE", 10, "FAMILIAR")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.recordViewed(7L, new ViewedRulesRequest("NOPE", 10)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.INVALID_INPUT);
+    }
+
+    @Test
+    void 동시에_같은_용어가_저장되면_건너뛴다() {
+        when(ai.todayRules("G1", 1, "INTRODUCTORY"))
+                .thenReturn(Optional.of(new AiTodayRules(List.of("balk"))));
+        when(viewedTermRepository.findTermIds(any(), any())).thenReturn(List.of());
+        when(viewedTermRepository.save(any()))
+                .thenThrow(new org.springframework.dao.DataIntegrityViolationException("dup"));
+
+        assertThat(service.recordViewed(7L, new ViewedRulesRequest("G1", 1)).termIds()).isEmpty();
     }
 
     @Test
@@ -134,7 +194,7 @@ class LearningQuizServiceTest {
     @Test
     void AI를_끈_뒤_AI_문항_기록_상세는_503() {
         LearningQuizService local = new LearningQuizService(
-                userRepository, attemptRepository, AiClient.disabled()
+                userRepository, attemptRepository, AiClient.disabled(), viewedTermRepository
         );
         QuizAttempt attempt = QuizAttempt.create(user, 1005, 1, true);
         when(attemptRepository.findByIdAndUser_Id(5L, 7L)).thenReturn(Optional.of(attempt));
@@ -147,7 +207,7 @@ class LearningQuizServiceTest {
     @Test
     void AI_주소가_없으면_임시_문항() {
         LearningQuizService local = new LearningQuizService(
-                userRepository, attemptRepository, AiClient.disabled()
+                userRepository, attemptRepository, AiClient.disabled(), viewedTermRepository
         );
 
         assertThat(local.getQuestions(7L)).extracting("questionId").containsExactly(1);

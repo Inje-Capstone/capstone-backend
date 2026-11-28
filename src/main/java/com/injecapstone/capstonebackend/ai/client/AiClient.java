@@ -5,6 +5,7 @@ import com.injecapstone.capstonebackend.ai.dto.AiDiagnosisRequest;
 import com.injecapstone.capstonebackend.ai.dto.AiDiagnosisResult;
 import com.injecapstone.capstonebackend.ai.dto.AiQuizQuestion;
 import com.injecapstone.capstonebackend.ai.dto.AiQuizQuestionDetail;
+import com.injecapstone.capstonebackend.ai.dto.AiTodayRules;
 import com.injecapstone.capstonebackend.global.error.BusinessException;
 import com.injecapstone.capstonebackend.global.error.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ public class AiClient {
     private static final String DIAGNOSIS_QUESTIONS = "/api/backend/onboarding/questions";
     private static final String DIAGNOSIS = "/api/backend/onboarding/diagnosis";
     private static final String QUIZ_QUESTIONS = "/api/backend/quiz/questions";
+    private static final String TODAY_RULES = "/api/games/{gameId}/today-rules";
 
     private final String baseUrl;
     private final RestClient api;
@@ -79,17 +81,45 @@ public class AiClient {
         return result;
     }
 
-    public List<AiQuizQuestion> quizQuestions(int count, String seed) {
+    // 오늘 본 용어(termIds) 문항만 — 맞는 문항이 없으면 빈 목록
+    public List<AiQuizQuestion> quizQuestions(int count, String seed, List<String> termIds) {
         List<AiQuizQuestion> questions = call(() -> api.get()
                 .uri(builder -> builder.path(QUIZ_QUESTIONS)
                         .queryParam("count", count)
                         .queryParam("seed", seed)
+                        .queryParam("term_id", termIds.toArray())
                         .build())
                 .retrieve()
                 .body(new ParameterizedTypeReference<List<AiQuizQuestion>>() {
                 })
         );
-        return requireNonEmpty(questions);
+        if (questions == null) {
+            throw unavailable("퀴즈 문항 응답이 비어 있음");
+        }
+        return questions;
+    }
+
+    // 이 경기에서 t초까지 카드로 본 용어 키. 없는 경기면 빈 값
+    public Optional<AiTodayRules> todayRules(String gameId, int t, String level) {
+        return call(() -> api.get()
+                .uri(builder -> builder.path(TODAY_RULES)
+                        .queryParam("t", t)
+                        .queryParam("level", level)
+                        .build(gameId))
+                .exchange((request, response) -> {
+                    if (response.getStatusCode().value() == HttpStatus.NOT_FOUND.value()) {
+                        return Optional.<AiTodayRules>empty();
+                    }
+                    if (response.getStatusCode().isError()) {
+                        throw unavailable("오늘 본 룰 조회 HTTP " + response.getStatusCode().value());
+                    }
+                    AiTodayRules rules = response.bodyTo(AiTodayRules.class);
+                    if (rules == null || rules.termIds() == null) {
+                        throw unavailable("오늘 본 룰 응답이 비어 있음");
+                    }
+                    return Optional.of(rules);
+                })
+        );
     }
 
     public boolean hasGameVideo(String gameId) {
