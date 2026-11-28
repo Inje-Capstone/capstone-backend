@@ -1,15 +1,21 @@
 package com.injecapstone.capstonebackend.point.repository;
 
 import com.injecapstone.capstonebackend.point.domain.PointTransaction;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
+
 import java.time.LocalDateTime;
 
 public interface PointTransactionRepository extends Repository<PointTransaction, Long> {
 
     <S extends PointTransaction> S save(S transaction);
+
     boolean existsByUser_IdAndEventKey(Long userId, String eventKey);
+
+    Slice<HistoryEntry> findByUser_IdOrderByRecordedAtUtcDescIdDesc(Long userId, Pageable pageable);
 
     @Query("""
             select sum(pt.amount)
@@ -32,4 +38,10 @@ public interface PointTransactionRepository extends Repository<PointTransaction,
             @Param("startUtc") LocalDateTime startUtc,
             @Param("endUtc") LocalDateTime endUtc
     );
+
+    interface HistoryEntry {
+        int getAmount();
+        String getEventKey();
+        LocalDateTime getRecordedAtUtc();
+    }
 }

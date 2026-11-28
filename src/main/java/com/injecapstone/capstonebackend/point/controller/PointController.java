@@ -1,21 +1,22 @@
 package com.injecapstone.capstonebackend.point.controller;
 
 import com.injecapstone.capstonebackend.point.dto.PointBalanceResponse;
+import com.injecapstone.capstonebackend.point.dto.PointHistoryResponse;
+import com.injecapstone.capstonebackend.point.dto.VideoClickRequest;
+import com.injecapstone.capstonebackend.point.dto.VideoClickResponse;
 import com.injecapstone.capstonebackend.point.service.PointService;
+import com.injecapstone.capstonebackend.point.service.VideoClickRewardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.injecapstone.capstonebackend.point.dto.VideoClickRequest;
-import com.injecapstone.capstonebackend.point.dto.VideoClickResponse;
-import com.injecapstone.capstonebackend.point.service.VideoClickRewardService;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/users/me/points")
@@ -26,8 +27,6 @@ public class PointController {
     private final PointService pointService;
     private final VideoClickRewardService videoClickRewardService;
 
-
-
     @Operation(
             summary = "내 보유 포인트 조회",
             description = "로그인한 사용자의 잔액을 조회합니다. 적립·차감 내역이 없으면 0을 반환합니다."
@@ -35,6 +34,19 @@ public class PointController {
     @GetMapping
     public PointBalanceResponse getMyPoints(@AuthenticationPrincipal Long userId) {
         return new PointBalanceResponse(pointService.getBalance(userId));
+    }
+
+    @Operation(
+            summary = "내 포인트 내역 조회",
+            description = "로그인한 사용자의 적립·차감 내역을 최신순으로 반환합니다. page는 0부터 시작하고 size는 1~100입니다."
+    )
+    @GetMapping("/history")
+    public PointHistoryResponse getMyPointHistory(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
+    ) {
+        return pointService.getHistory(userId, page, size);
     }
 
     @Operation(
